@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรแกรมตัดเกรดสำหรับครู</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2pdf.js for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap');
+        body {
+            font-family: 'Kanit', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Modern Beige Theme */
+        body {
+            background-color: #F5F5DC; /* Beige background */
+        }
+        
+        .container-card {
+            background-color: #FFFFFF;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 10px 20px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+        }
+        
+        .section-card {
+            background-color: #F8F4E3; /* Lighter beige */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .input-field {
+            border-color: #D3B995;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease-in-out;
+        }
+        .input-field:focus {
+            border-color: #B58863;
+            box-shadow: 0 0 0 3px rgba(181, 136, 99, 0.4);
+            outline: none;
+        }
+
+        .primary-button {
+            background-color: #B58863;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            transition: background-color 0.3s ease-in-out, transform 0.2s ease-in-out;
+        }
+        .primary-button:hover {
+            background-color: #9D7453;
+            transform: translateY(-2px);
+        }
+        .primary-button:active {
+            transform: translateY(0);
+        }
+
+        .secondary-button {
+            background-color: #E6D8C6;
+            color: #8D6B4E;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            transition: background-color 0.3s ease-in-out, transform 0.2s ease-in-out;
+        }
+        .secondary-button:hover {
+            background-color: #D3B995;
+            transform: translateY(-2px);
+        }
+        .secondary-button:active {
+            transform: translateY(0);
+        }
+
+        .text-brown { color: #8D6B4E; }
+        .text-dark-brown { color: #5B483B; }
+        
+        .grade-A { color: #10B981; font-weight: bold; } /* Green */
+        .grade-B { color: #3B82F6; font-weight: bold; } /* Blue */
+        .grade-C { color: #F97316; font-weight: bold; } /* Orange */
+        .grade-D { color: #EAB308; font-weight: bold; } /* Yellow */
+        .grade-F { color: #EF4444; font-weight: bold; } /* Red */
+
+        /* Custom Modal Styles */
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            display: none;
+        }
+        .modal-content {
+            min-width: 300px;
+            padding: 1rem;
+        }
+
+        .editable-score {
+            cursor: text;
+        }
+
+        /* Table Styles */
+        th, td {
+            border-bottom: 1px solid #E6D8C6;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <!-- Main Container -->
+    <div id="content-to-export" class="max-w-4xl mx-auto container-card">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-dark-brown mb-6">
+            โปรแกรมคำนวณเกรด
+        </h1>
+
+        <!-- Input Section for Weights -->
+        <div class="mb-6 section-card">
+            <h2 class="text-xl font-semibold text-brown mb-4">กำหนดน้ำหนักคะแนน</h2>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <div class="flex-1">
+                    <label for="workWeight" class="block text-brown mb-1">น้ำหนักคะแนนเก็บ (Work Weight)</label>
+                    <input type="number" id="workWeight" value="60" min="0" max="100" class="w-full p-2 border input-field">
+                </div>
+                <div class="flex-1">
+                    <label for="examWeight" class="block text-brown mb-1">น้ำหนักคะแนนสอบ (Exam Weight)</label>
+                    <input type="number" id="examWeight" value="40" min="0" max="100" class="w-full p-2 border input-field">
+                </div>
+            </div>
+            <p id="weightWarning" class="text-sm text-red-500 mt-2 hidden">
+                ⚠️ ผลรวมน้ำหนักคะแนนต้องเท่ากับ 100
+            </p>
+        </div>
+
+        <!-- Input Section for New Student -->
+        <div class="mb-6 section-card">
+            <h2 class="text-xl font-semibold text-brown mb-4">เพิ่มรายชื่อนักเรียน</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+                <div class="sm:col-span-2">
+                    <label for="studentName" class="block text-brown mb-1">ชื่อ-นามสกุล</label>
+                    <input type="text" id="studentName" placeholder="ชื่อนักเรียน" class="w-full p-2 border input-field">
+                </div>
+                <div>
+                    <label for="workScore" class="block text-brown mb-1">คะแนนเก็บ</label>
+                    <input type="number" id="workScore" placeholder="0-100" min="0" max="100" class="w-full p-2 border input-field">
+                </div>
+                <div>
+                    <label for="examScore" class="block text-brown mb-1">คะแนนสอบ</label>
+                    <input type="number" id="examScore" placeholder="0-100" min="0" max="100" class="w-full p-2 border input-field">
+                </div>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button id="addStudentBtn" class="primary-button">
+                    เพิ่มนักเรียน
+                </button>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+            <button id="calculateGradesBtn" class="w-full primary-button">
+                คำนวณเกรดทั้งหมด
+            </button>
+            <button id="exportCsvBtn" class="w-full secondary-button">
+                Export CSV
+            </button>
+            <button id="exportPdfBtn" class="w-full secondary-button">
+                ดาวน์โหลด PDF
+            </button>
+            <button id="clearDataBtn" class="w-full secondary-button text-red-500 border border-red-500 hover:bg-red-500 hover:text-white">
+                ล้างข้อมูลนักเรียนทั้งหมด
+            </button>
+        </div>
+
+        <!-- Result Table -->
+        <div class="table-responsive">
+            <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                <thead>
+                    <tr class="bg-gray-100 text-brown uppercase text-sm leading-normal">
+                        <th class="py-3 px-6 text-left">#</th>
+                        <th class="py-3 px-6 text-left">ชื่อ-นามสกุล</th>
+                        <th class="py-3 px-6 text-center">คะแนนเก็บ</th>
+                        <th class="py-3 px-6 text-center">คะแนนสอบ</th>
+                        <th class="py-3 px-6 text-center">คะแนนรวม</th>
+                        <th class="py-3 px-6 text-center">เกรด</th>
+                        <th class="py-3 px-6 text-center">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="studentTableBody" class="text-dark-brown text-sm font-light">
+                    <!-- Student rows will be injected here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-8 text-gray-500 text-sm">
+            <p>© 2024 Grade Calculator</p>
+        </div>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="customAlert" class="modal container-card">
+        <div class="modal-content">
+            <p id="alertMessage" class="mb-4 text-dark-brown"></p>
+            <div class="flex justify-end">
+                <button class="primary-button" onclick="document.getElementById('customAlert').style.display='none'">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="customConfirm" class="modal container-card">
+        <div class="modal-content">
+            <p id="confirmMessage" class="mb-4 text-dark-brown"></p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirmOkBtn" class="primary-button">OK</button>
+                <button id="confirmCancelBtn" class="secondary-button">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript เริ่มต้น
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // === ตัวแปร DOM elements ===
+            const studentNameInput = document.getElementById('studentName');
+            const workScoreInput = document.getElementById('workScore');
+            const examScoreInput = document.getElementById('examScore');
+            const addStudentBtn = document.getElementById('addStudentBtn');
+            const calculateGradesBtn = document.getElementById('calculateGradesBtn');
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const clearDataBtn = document.getElementById('clearDataBtn');
+            const studentTableBody = document.getElementById('studentTableBody');
+            const workWeightInput = document.getElementById('workWeight');
+            const examWeightInput = document.getElementById('examWeight');
+            const weightWarning = document.getElementById('weightWarning');
+            const contentToExport = document.getElementById('content-to-export');
+
+
+            // Custom modal elements
+            const customAlert = document.getElementById('customAlert');
+            const alertMessage = document.getElementById('alertMessage');
+            const customConfirm = document.getElementById('customConfirm');
+            const confirmMessage = document.getElementById('confirmMessage');
+            const confirmOkBtn = document.getElementById('confirmOkBtn');
+            const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+
+            // Function to show custom alert modal
+            function showAlert(message) {
+                alertMessage.textContent = message;
+                customAlert.style.display = 'block';
+            }
+
+            // Function to show custom confirm modal
+            function showConfirm(message, callback) {
+                confirmMessage.textContent = message;
+                customConfirm.style.display = 'block';
+
+                confirmOkBtn.onclick = () => {
+                    callback();
+                    customConfirm.style.display = 'none';
+                };
+
+                confirmCancelBtn.onclick = () => {
+                    customConfirm.style.display = 'none';
+                };
+            }
+
+            // === ฟังก์ชันจัดการข้อมูลนักเรียน ===
+            let students = [];
+
+            // โหลดข้อมูลนักเรียนจาก Local Storage
+            function loadStudents() {
+                const storedStudents = localStorage.getItem('students');
+                if (storedStudents) {
+                    students = JSON.parse(storedStudents);
+                } else {
+                    // ตัวอย่างข้อมูล 5 คน ถ้ายังไม่มีข้อมูลใน localStorage
+                    students = [
+                        { name: "อาทิตย์ ไชยพร", workScore: 82, examScore: 88, totalScore: 0, grade: "" },
+                        { name: "เบญจมาศ ศรีวัน", workScore: 76, examScore: 91, totalScore: 0, grade: "" },
+                        { name: "ชานันท์ เล็กดี", workScore: 95, examScore: 85, totalScore: 0, grade: "" },
+                        { name: "ดวงใจ พิสิฐ", workScore: 68, examScore: 72, totalScore: 0, grade: "" },
+                        { name: "เอกชัย ยอดศรี", workScore: 54, examScore: 63, totalScore: 0, grade: "" }
+                    ];
+                    saveStudents();
+                }
+                renderTable(); // แสดงผลตารางทันทีหลังโหลด
+            }
+
+            // บันทึกข้อมูลนักเรียนลง Local Storage
+            function saveStudents() {
+                localStorage.setItem('students', JSON.stringify(students));
+            }
+            
+            // ตรวจสอบความถูกต้องของน้ำหนักคะแนน
+            function validateWeights() {
+                const workWeight = parseFloat(workWeightInput.value) || 0;
+                const examWeight = parseFloat(examWeightInput.value) || 0;
+                if (workWeight + examWeight !== 100) {
+                    weightWarning.classList.remove('hidden');
+                    return false;
+                } else {
+                    weightWarning.classList.add('hidden');
+                    return true;
+                }
+            }
+
+            // คำนวณคะแนนรวมและเกรด
+            function calculateGrades() {
+                if (!validateWeights()) return;
+                
+                const workWeight = parseFloat(workWeightInput.value) / 100;
+                const examWeight = parseFloat(examWeightInput.value) / 100;
+
+                students.forEach(student => {
+                    const total = (student.workScore * workWeight) + (student.examScore * examWeight);
+                    student.totalScore = total.toFixed(2);
+                    student.grade = getGrade(total);
+                });
+                renderTable();
+                saveStudents();
+            }
+
+            // กำหนดเกรดตามคะแนนรวม
+            function getGrade(score) {
+                if (score >= 80) return "A";
+                if (score >= 70) return "B";
+                if (score >= 60) return "C";
+                if (score >= 50) return "D";
+                return "F";
+            }
+
+            // แสดงผลข้อมูลในตาราง
+            function renderTable() {
+                studentTableBody.innerHTML = '';
+                students.forEach((student, index) => {
+                    const gradeClass = `grade-${student.grade}`;
+                    const row = `
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="py-3 px-6 text-left whitespace-nowrap">${index + 1}</td>
+                            <td class="py-3 px-6 text-left">${student.name}</td>
+                            <td class="py-3 px-6 text-center editable-score" data-index="${index}" data-field="workScore" contenteditable="true">${student.workScore}</td>
+                            <td class="py-3 px-6 text-center editable-score" data-index="${index}" data-field="examScore" contenteditable="true">${student.examScore}</td>
+                            <td class="py-3 px-6 text-center font-semibold">${student.totalScore}</td>
+                            <td class="py-3 px-6 text-center font-bold text-lg ${gradeClass}">${student.grade}</td>
+                            <td class="py-3 px-6 text-center">
+                                <button onclick="deleteStudent(${index})" class="text-red-500 hover:text-red-700 transition duration-300">
+                                    ลบ
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    studentTableBody.innerHTML += row;
+                });
+            }
+
+            // ลบนักเรียน
+            window.deleteStudent = function(index) {
+                showConfirm("คุณแน่ใจหรือไม่ที่จะลบข้อมูลนักเรียนคนนี้?", () => {
+                    students.splice(index, 1);
+                    saveStudents();
+                    renderTable();
+                });
+            }
+
+            // Export CSV
+            function exportCsv() {
+                const csvRows = [];
+                const headers = ["#", "ชื่อ-นามสกุล", "คะแนนเก็บ", "คะแนนสอบ", "คะแนนรวม", "เกรด"];
+                csvRows.push(headers.join(","));
+
+                students.forEach((student, index) => {
+                    const row = [
+                        index + 1,
+                        `"${student.name.replace(/"/g, '""')}"`, // escape double quotes
+                        student.workScore,
+                        student.examScore,
+                        student.totalScore,
+                        student.grade
+                    ];
+                    csvRows.push(row.join(","));
+                });
+
+                const csvString = csvRows.join("\n");
+                const blob = new Blob([`\ufeff${csvString}`], { type: 'text/csv;charset=utf-8;' }); // Add BOM for Thai characters
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'grade_report.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+
+            // Export PDF
+            function exportPdf() {
+                const options = {
+                    filename: 'grade_report.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+
+                html2pdf().set(options).from(contentToExport).save();
+            }
+            
+            // === Event Listeners ===
+            addStudentBtn.addEventListener('click', () => {
+                const name = studentNameInput.value.trim();
+                const workScore = parseFloat(workScoreInput.value);
+                const examScore = parseFloat(examScoreInput.value);
+
+                // ตรวจสอบข้อมูลก่อนเพิ่ม
+                if (name === "" || isNaN(workScore) || isNaN(examScore) || workScore < 0 || workScore > 100 || examScore < 0 || examScore > 100) {
+                    showAlert("กรุณาป้อนข้อมูลให้ครบถ้วนและถูกต้อง (คะแนน 0-100)");
+                    return;
+                }
+
+                const newStudent = {
+                    name: name,
+                    workScore: workScore,
+                    examScore: examScore,
+                    totalScore: 0,
+                    grade: ""
+                };
+                
+                students.push(newStudent);
+                saveStudents();
+                renderTable();
+
+                // ล้างฟอร์ม
+                studentNameInput.value = '';
+                workScoreInput.value = '';
+                examScoreInput.value = '';
+                studentNameInput.focus();
+            });
+
+            calculateGradesBtn.addEventListener('click', calculateGrades);
+            exportCsvBtn.addEventListener('click', exportCsv);
+            exportPdfBtn.addEventListener('click', exportPdf);
+            
+            clearDataBtn.addEventListener('click', () => {
+                showConfirm("คุณแน่ใจหรือไม่ที่จะลบข้อมูลนักเรียนทั้งหมด?", () => {
+                    localStorage.removeItem('students');
+                    students = [];
+                    renderTable();
+                });
+            });
+
+            // ตรวจสอบน้ำหนักคะแนนเมื่อมีการเปลี่ยนแปลง
+            workWeightInput.addEventListener('input', validateWeights);
+            examWeightInput.addEventListener('input', validateWeights);
+
+            // === Event listener สำหรับการแก้ไขคะแนนในตาราง ===
+            studentTableBody.addEventListener('input', (event) => {
+                const target = event.target;
+                // ตรวจสอบว่าเป็นช่องคะแนนที่แก้ไขได้หรือไม่
+                if (target.classList.contains('editable-score')) {
+                    const index = target.getAttribute('data-index');
+                    const field = target.getAttribute('data-field');
+                    let score = parseFloat(target.textContent);
+
+                    // ตรวจสอบความถูกต้องของคะแนน
+                    if (isNaN(score) || score < 0 || score > 100) {
+                        showAlert("กรุณาป้อนตัวเลขคะแนนที่ถูกต้อง (0-100)");
+                        target.textContent = students[index][field]; // คืนค่าเดิม
+                    } else {
+                        students[index][field] = score; // อัปเดตข้อมูลใน array
+                        calculateGrades(); // คำนวณเกรดใหม่
+                    }
+                }
+            });
+
+            // โหลดข้อมูลเมื่อหน้าเว็บเปิดครั้งแรก
+            loadStudents();
+            calculateGrades();
+        });
+    </script>
+</body>
+</html>
