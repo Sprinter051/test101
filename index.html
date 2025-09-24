@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Disco 80s Profile</title>
+    <style>
+        body {
+            font-family: 'Trebuchet MS', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            /* พื้นหลัง neon disco + grid */
+            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* เส้นกริดแบบ Tron */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(#00ffff33 1px, transparent 1px),
+                linear-gradient(90deg, #ff00ff33 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+        }
+
+        .profile-container {
+            position: relative;
+            z-index: 1;
+            background: rgba(0, 0, 0, 0.7);
+            border: 3px solid #ff00ff;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 0 25px #ff00ff, 0 0 45px #00ffff;
+        }
+
+        .profile-container img {
+            width: 200px;
+            height: 240px;
+            border-radius: 15px;
+            object-fit: cover;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px #00ffff, 0 0 30px #ff00ff;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin: 10px 0;
+            color: #ff00ff;
+            text-shadow: 0 0 5px #ff00ff, 0 0 15px #ff00ff, 0 0 25px #00ffff;
+        }
+
+        h2, h3, h4, h5, h6 {
+            margin: 5px 0;
+            font-weight: normal;
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff, 0 0 12px #ff00ff;
+        }
+
+        h2 {
+            font-size: 24px;
+            color: #39ff14;
+            text-shadow: 0 0 6px #39ff14, 0 0 18px #ff00ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <img src="printer.jpg" alt="Profile Picture">
+        <h1>My Name printer</h1>
+        <h2>My Name printer</h2>
+        <h3>My Name printer</h3>
+        <h4>My Name printer</h4>
+        <h5>My Name printer</h5>
+        <h6>My Name printer</h6>
+    </div>
+</body>
+</html>
